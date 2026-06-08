@@ -7,8 +7,7 @@ const byte MOTOR_IN3_PIN = 10;
 const byte MOTOR_IN4_PIN = 11;
 
 const unsigned long DEBOUNCE_MS = 40;
-const unsigned long AUDIO_ON_PULSE_MS = 250;
-const unsigned long SOUND_PLAY_TIME_MS = 10000; // Change this to match your MP3 length.
+const unsigned long AUDIO_POWER_ON_TIME_MS = 600000; // 10 minutes.
 
 const int HALF_TURN_STEPS = 1024; // 28BYJ-48: about 180 degrees.
 const unsigned int STEP_DELAY_MS = 3;
@@ -74,29 +73,24 @@ bool buttonWasPressed() {
 void playAudioAndMoveMotorUntilFinished() {
   actionRunning = true;
 
-  triggerAudioOn();
+  digitalWrite(AUDIO_ON_PIN, HIGH);
 
   unsigned long startedAt = millis();
   int direction = 1;
 
-  while (millis() - startedAt < SOUND_PLAY_TIME_MS) {
+  while (millis() - startedAt < AUDIO_POWER_ON_TIME_MS) {
     moveHalfTurnUntilTimeEnds(direction, startedAt);
     direction = -direction;
   }
 
+  digitalWrite(AUDIO_ON_PIN, LOW);
   releaseMotor();
   actionRunning = false;
 }
 
-void triggerAudioOn() {
-  digitalWrite(AUDIO_ON_PIN, HIGH);
-  delay(AUDIO_ON_PULSE_MS);
-  digitalWrite(AUDIO_ON_PIN, LOW);
-}
-
 void moveHalfTurnUntilTimeEnds(int direction, unsigned long startedAt) {
   for (int i = 0; i < HALF_TURN_STEPS; i++) {
-    if (millis() - startedAt >= SOUND_PLAY_TIME_MS) {
+    if (millis() - startedAt >= AUDIO_POWER_ON_TIME_MS) {
       return;
     }
 
