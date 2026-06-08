@@ -23,11 +23,11 @@
 | Arduino Nano | Module |
 | --- | --- |
 | D2 | Push button to GND, using `INPUT_PULLUP` |
-| D3 | ULN2003 IN1 |
-| D4 | ULN2003 IN2 |
-| D5 | ULN2003 IN3 |
-| D6 | ULN2003 IN4 |
-| D10 | MP3 Play/Pause trigger circuit |
+| D7 | MP3 Play/Pause trigger circuit |
+| D8 | ULN2003 IN1 |
+| D9 | ULN2003 IN2 |
+| D10 | ULN2003 IN3 |
+| D11 | ULN2003 IN4 |
 | 5V | ULN2003 VCC and MP3 board 5V input |
 | GND | Common GND for Arduino, ULN2003, MP3 board, and power supply |
 
@@ -38,7 +38,7 @@
 แนะนำให้ใช้ NPN transistor หรือ optocoupler คร่อมขาปุ่ม Play/Pause บนบอร์ด MP3:
 
 ```text
-Arduino D10 -- 1k resistor -- NPN base
+Arduino D7 -- 1k resistor -- NPN base
 NPN emitter ---------------- GND
 NPN collector -------------- one side of MP3 Play/Pause button
 MP3 button other side ------ GND side of the Play/Pause button
