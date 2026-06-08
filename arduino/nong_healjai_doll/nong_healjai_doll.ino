@@ -1,5 +1,5 @@
-const byte BUTTON_PIN = 2;
-const byte MP3_PLAY_TRIGGER_PIN = 7;
+const byte AUDIO_ON_PIN = 2;
+const byte BUTTON_PIN = 6;
 
 const byte MOTOR_IN1_PIN = 8;
 const byte MOTOR_IN2_PIN = 9;
@@ -7,8 +7,8 @@ const byte MOTOR_IN3_PIN = 10;
 const byte MOTOR_IN4_PIN = 11;
 
 const unsigned long DEBOUNCE_MS = 40;
-const unsigned long MP3_TRIGGER_MS = 250;
-const unsigned long START_RETURN_DELAY_MS = 300;
+const unsigned long AUDIO_ON_PULSE_MS = 250;
+const unsigned long SOUND_PLAY_TIME_MS = 10000; // Change this to match your MP3 length.
 
 const int HALF_TURN_STEPS = 1024; // 28BYJ-48: about 180 degrees.
 const unsigned int STEP_DELAY_MS = 3;
@@ -30,15 +30,15 @@ const byte STEP_SEQUENCE[8][4] = {
 };
 
 void setup() {
+  pinMode(AUDIO_ON_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(MP3_PLAY_TRIGGER_PIN, OUTPUT);
 
   pinMode(MOTOR_IN1_PIN, OUTPUT);
   pinMode(MOTOR_IN2_PIN, OUTPUT);
   pinMode(MOTOR_IN3_PIN, OUTPUT);
   pinMode(MOTOR_IN4_PIN, OUTPUT);
 
-  digitalWrite(MP3_PLAY_TRIGGER_PIN, LOW);
+  digitalWrite(AUDIO_ON_PIN, LOW);
   releaseMotor();
 
   Serial.begin(9600);
@@ -47,7 +47,7 @@ void setup() {
 
 void loop() {
   if (buttonWasPressed() && !actionRunning) {
-    playVoiceAndMoveMotor();
+    playAudioAndMoveMotorUntilFinished();
   }
 }
 
@@ -71,34 +71,35 @@ bool buttonWasPressed() {
   return false;
 }
 
-void playVoiceAndMoveMotor() {
+void playAudioAndMoveMotorUntilFinished() {
   actionRunning = true;
 
-  triggerMp3PlayButton();
+  triggerAudioOn();
 
-  moveMotor(HALF_TURN_STEPS);
-  delay(START_RETURN_DELAY_MS);
-  moveMotor(-HALF_TURN_STEPS);
+  unsigned long startedAt = millis();
+  int direction = 1;
+
+  while (millis() - startedAt < SOUND_PLAY_TIME_MS) {
+    moveHalfTurnUntilTimeEnds(direction, startedAt);
+    direction = -direction;
+  }
 
   releaseMotor();
   actionRunning = false;
 }
 
-void triggerMp3PlayButton() {
-  digitalWrite(MP3_PLAY_TRIGGER_PIN, HIGH);
-  delay(MP3_TRIGGER_MS);
-  digitalWrite(MP3_PLAY_TRIGGER_PIN, LOW);
+void triggerAudioOn() {
+  digitalWrite(AUDIO_ON_PIN, HIGH);
+  delay(AUDIO_ON_PULSE_MS);
+  digitalWrite(AUDIO_ON_PIN, LOW);
 }
 
-void moveMotor(int steps) {
-  int direction = 1;
+void moveHalfTurnUntilTimeEnds(int direction, unsigned long startedAt) {
+  for (int i = 0; i < HALF_TURN_STEPS; i++) {
+    if (millis() - startedAt >= SOUND_PLAY_TIME_MS) {
+      return;
+    }
 
-  if (steps < 0) {
-    direction = -1;
-    steps = -steps;
-  }
-
-  for (int i = 0; i < steps; i++) {
     int sequenceIndex = i % 8;
 
     if (direction < 0) {
