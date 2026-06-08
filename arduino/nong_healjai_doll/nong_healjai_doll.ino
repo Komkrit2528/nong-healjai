@@ -2,39 +2,44 @@
   nong healjai doll
 
   Board: Arduino Nano
-  Audio: DFPlayer Mini MP3 module
-  Stepper driver: A4988/DRV8825 style STEP/DIR driver
+  Audio: HW-188 style MP3 player board with Play/Pause button
+  Motor: 28BYJ-48 5V stepper motor with ULN2003 driver board
 
   Behavior:
   - Press the pull-up button once.
-  - DFPlayer plays /mp3/0001.mp3 from the microSD card.
-  - The stepper motor turns forward 180 degrees, then returns 180 degrees.
+  - Arduino simulates one Play/Pause button press on the MP3 board.
+  - The 28BYJ-48 turns forward 180 degrees, then returns 180 degrees.
+
+  MP3 trigger wiring:
+  Use a small NPN transistor or optocoupler across the MP3 board Play/Pause
+  button contacts. Arduino D10 drives the transistor/opto input.
 */
 
-#include <SoftwareSerial.h>
-#include <DFRobotDFPlayerMini.h>
-#include <AccelStepper.h>
+#include <Stepper.h>
 
 const byte BUTTON_PIN = 2;
-const byte DFPLAYER_RX_PIN = 10; // Arduino RX, connect to DFPlayer TX.
-const byte DFPLAYER_TX_PIN = 11; // Arduino TX, connect to DFPlayer RX through 1k resistor.
-const byte STEPPER_STEP_PIN = 3;
-const byte STEPPER_DIR_PIN = 4;
-const byte STEPPER_ENABLE_PIN = 5;
+const byte MP3_PLAY_TRIGGER_PIN = 10;
+
+const byte MOTOR_IN1_PIN = 3;
+const byte MOTOR_IN2_PIN = 4;
+const byte MOTOR_IN3_PIN = 5;
+const byte MOTOR_IN4_PIN = 6;
 
 const unsigned long DEBOUNCE_MS = 40;
+const unsigned long MP3_TRIGGER_MS = 250;
 const unsigned long START_RETURN_DELAY_MS = 300;
 
-const int MP3_TRACK_NUMBER = 1;
-const int MP3_VOLUME = 25; // 0 to 30.
+const int STEPS_PER_REVOLUTION = 2048; // 28BYJ-48 common full output-shaft revolution.
+const int HALF_TURN_STEPS = STEPS_PER_REVOLUTION / 2;
+const int MOTOR_RPM = 10;
 
-const long MOTOR_STEPS_PER_REV = 200; // 1.8 degree stepper motor.
-const int MICROSTEPS = 16;            // Match MS1/MS2/MS3 wiring on the driver.
-const long HALF_TURN_STEPS = (MOTOR_STEPS_PER_REV * MICROSTEPS) / 2;
-
-SoftwareSerial mp3Serial(DFPLAYER_RX_PIN, DFPLAYER_TX_PIN);
-DFRobotDFPlayerMini mp3;
-AccelStepper stepper(AccelStepper::DRIVER, STEPPER_STEP_PIN, STEPPER_DIR_PIN);
+Stepper dollMotor(
+  STEPS_PER_REVOLUTION,
+  MOTOR_IN1_PIN,
+  MOTOR_IN3_PIN,
+  MOTOR_IN2_PIN,
+  MOTOR_IN4_PIN
+);
 
 bool lastButtonReading = HIGH;
 bool stableButtonState = HIGH;
@@ -43,22 +48,19 @@ bool actionRunning = false;
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(STEPPER_ENABLE_PIN, OUTPUT);
-  digitalWrite(STEPPER_ENABLE_PIN, HIGH); // Disable driver when idle. LOW enables most drivers.
+  pinMode(MP3_PLAY_TRIGGER_PIN, OUTPUT);
+  digitalWrite(MP3_PLAY_TRIGGER_PIN, LOW);
+
+  pinMode(MOTOR_IN1_PIN, OUTPUT);
+  pinMode(MOTOR_IN2_PIN, OUTPUT);
+  pinMode(MOTOR_IN3_PIN, OUTPUT);
+  pinMode(MOTOR_IN4_PIN, OUTPUT);
+  releaseMotor();
+
+  dollMotor.setSpeed(MOTOR_RPM);
 
   Serial.begin(9600);
-  mp3Serial.begin(9600);
-
-  stepper.setMaxSpeed(900);
-  stepper.setAcceleration(600);
-  stepper.setCurrentPosition(0);
-
-  if (!mp3.begin(mp3Serial)) {
-    Serial.println(F("DFPlayer Mini not found. Check wiring and SD card."));
-  } else {
-    mp3.volume(MP3_VOLUME);
-    Serial.println(F("DFPlayer Mini ready."));
-  }
+  Serial.println(F("nong healjai doll ready."));
 }
 
 void loop() {
@@ -89,18 +91,26 @@ bool buttonWasPressed() {
 
 void playVoiceAndMoveMotor() {
   actionRunning = true;
-  digitalWrite(STEPPER_ENABLE_PIN, LOW);
 
-  mp3.playMp3Folder(MP3_TRACK_NUMBER);
+  triggerMp3PlayButton();
 
-  stepper.moveTo(HALF_TURN_STEPS);
-  stepper.runToPosition();
-
+  dollMotor.step(HALF_TURN_STEPS);
   delay(START_RETURN_DELAY_MS);
+  dollMotor.step(-HALF_TURN_STEPS);
 
-  stepper.moveTo(0);
-  stepper.runToPosition();
-
-  digitalWrite(STEPPER_ENABLE_PIN, HIGH);
+  releaseMotor();
   actionRunning = false;
+}
+
+void triggerMp3PlayButton() {
+  digitalWrite(MP3_PLAY_TRIGGER_PIN, HIGH);
+  delay(MP3_TRIGGER_MS);
+  digitalWrite(MP3_PLAY_TRIGGER_PIN, LOW);
+}
+
+void releaseMotor() {
+  digitalWrite(MOTOR_IN1_PIN, LOW);
+  digitalWrite(MOTOR_IN2_PIN, LOW);
+  digitalWrite(MOTOR_IN3_PIN, LOW);
+  digitalWrite(MOTOR_IN4_PIN, LOW);
 }
