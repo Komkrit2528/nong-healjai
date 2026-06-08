@@ -58,22 +58,28 @@ MP3 button other side ------ GND side of the Play/Pause button
 
 ## Arduino libraries
 
-ใช้ไลบรารีมาตรฐานของ Arduino:
-
-- `Stepper`
-
-ไม่ต้องใช้ `DFRobotDFPlayerMini` แล้ว เพราะบอร์ด MP3 ตัวนี้ควบคุมแบบปุ่มกด
+โค้ดเวอร์ชันนี้ไม่ต้องติดตั้งไลบรารีเพิ่ม และไม่ใช้ `Stepper.h` เพื่อเลี่ยงปัญหา Arduino IDE เลือกไลบรารี Stepper ผิดตัว
 
 ## Motor setup
 
 โค้ดตั้งค่า 28BYJ-48 เป็น:
 
-- 2048 steps per output-shaft revolution
 - 180 degrees = 1024 steps
-- Speed = 10 RPM
+- Step delay = 3 ms
 
-ถ้ามอเตอร์หมุนสั่นหรือไม่หมุน ให้ลองสลับลำดับสาย IN1-IN4 หรือเปลี่ยนลำดับพินใน constructor:
+ถ้ามอเตอร์หมุนสั่นหรือไม่หมุน ให้ลองสลับลำดับสาย IN1-IN4 หรือปรับลำดับใน `STEP_SEQUENCE`
 
 ```cpp
-Stepper dollMotor(STEPS_PER_REVOLUTION, MOTOR_IN1_PIN, MOTOR_IN3_PIN, MOTOR_IN2_PIN, MOTOR_IN4_PIN);
+const byte STEP_SEQUENCE[8][4] = {
+  {1, 0, 0, 0},
+  {1, 1, 0, 0},
+  {0, 1, 0, 0},
+  {0, 1, 1, 0},
+  {0, 0, 1, 0},
+  {0, 0, 1, 1},
+  {0, 0, 0, 1},
+  {1, 0, 0, 1}
+};
 ```
+
+ถ้าคอมไพล์แล้วเจอ error จากบรรทัด `Board: Arduino Nano` แปลว่ามีการคัดลอกข้อความอธิบายเข้าไปในไฟล์ `.ino` ให้ใช้เฉพาะโค้ดจากไฟล์ `nong_healjai_doll.ino` เท่านั้น
