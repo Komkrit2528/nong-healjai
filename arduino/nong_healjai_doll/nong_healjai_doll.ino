@@ -12,18 +12,18 @@
 
   MP3 trigger wiring:
   Use a small NPN transistor or optocoupler across the MP3 board Play/Pause
-  button contacts. Arduino D10 drives the transistor/opto input.
+  button contacts. Arduino D7 drives the transistor/opto input.
 */
 
 #include <Stepper.h>
 
 const byte BUTTON_PIN = 2;
-const byte MP3_PLAY_TRIGGER_PIN = 10;
+const byte MP3_PLAY_TRIGGER_PIN = 7;
 
-const byte MOTOR_IN1_PIN = 3;
-const byte MOTOR_IN2_PIN = 4;
-const byte MOTOR_IN3_PIN = 5;
-const byte MOTOR_IN4_PIN = 6;
+const byte MOTOR_IN1_PIN = 8;
+const byte MOTOR_IN2_PIN = 9;
+const byte MOTOR_IN3_PIN = 10;
+const byte MOTOR_IN4_PIN = 11;
 
 const unsigned long DEBOUNCE_MS = 40;
 const unsigned long MP3_TRIGGER_MS = 250;
